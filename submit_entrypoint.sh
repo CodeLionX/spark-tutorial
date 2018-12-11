@@ -12,6 +12,11 @@ default_opts="--properties-file /spark-defaults.conf"
 mkdir -p ${SPARK_HOME}/work && chown ${SPARK_USER}:hadoop ${SPARK_HOME}/work
 chmod 1777 /tmp
 
+# copy jars to volume
+echo "copying jars and data to share"
+cp -r /app/*.jar /work/
+cp -r /app/data /work/
+
 # run submit command
-cd /tmp
+cd /work
 exec gosu ${SPARK_USER}:hadoop ${SPARK_HOME}/bin/spark-submit ${default_opts} $@

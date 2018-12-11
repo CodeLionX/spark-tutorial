@@ -87,6 +87,7 @@ SUBMITHELP
 namefile=".workernames"
 master_name="spark-master"
 worker_name="spark-worker"
+volume_name="spark-volume"
 default_n=2
 default_webui_port=8080
 
@@ -109,8 +110,12 @@ function start() {
     # reset getopts counter
     OPTIND=${old_optind}
 
+    # prepare application volume
+    echo "preparing volume ${volume_name}"
+    docker volume create ${volume_name} >/dev/null
+
     # Spawn master
-    docker run --rm -d --name ${master_name} -p ${p}:8080 actionml/spark master >/dev/null
+    docker run --rm -d --name ${master_name} -v ${volume_name}:/work:ro -p ${p}:8080 actionml/spark master >/dev/null
     echo "${master_name} started"
     master_ip=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${master_name})
 
@@ -118,7 +123,7 @@ function start() {
     counter=0
     while [[ ${counter} -lt ${n} ]]; do
         echo "${worker_name}${counter}" >> ${namefile}
-        docker run --rm -d --name "${worker_name}${counter}" actionml/spark worker spark://${master_ip}:7077 >/dev/null
+        docker run --rm -d --name "${worker_name}${counter}" -v ${volume_name}:/work:ro actionml/spark worker spark://${master_ip}:7077 >/dev/null
         echo "${worker_name}${counter} started"
         let counter=counter+1
     done
@@ -216,7 +221,13 @@ function submit() {
     # execute submission
     master_ip=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${master_name})
     # docker run --rm -it -v $(pwd):/work actionml/spark /work/submit_entrypoint.sh --master spark://172.17.0.2:7077 --deploy-mode client --class de.hpi.spark_tutorial.SimpleSpark$ SparkTutorial-1.0.jar
-    docker run --rm -it -v $(pwd):/tmp/work:ro actionml/spark /tmp/work/submit_entrypoint.sh --master spark://${master_ip}:7077 --deploy-mode cluster "${@:2}"
+    docker run  --rm -it \
+                -v $(pwd):/app:ro \
+                -v ${volume_name}:/work \
+           actionml/spark /app/submit_entrypoint.sh \
+                --master spark://${master_ip}:6066 \
+                --deploy-mode cluster \
+                "${@:2}"
 
     # reset getopts counter
     OPTIND=${old_optind}
