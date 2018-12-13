@@ -1,6 +1,8 @@
 package de.hpi.spark_tutorial.schemas
 
 object Part {
+  val name: String = "tpch_part"
+
   val P_PARTKEY: String = "P_PARTKEY"
   val P_NAME: String = "P_NAME"
   val P_MFGR: String = "P_MFGR"

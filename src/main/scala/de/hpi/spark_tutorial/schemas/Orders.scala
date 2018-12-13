@@ -1,6 +1,8 @@
 package de.hpi.spark_tutorial.schemas
 
 object Orders {
+  val name: String = "tpch_orders"
+
   val O_ORDERKEY: String = "O_ORDERKEY"
   val O_CUSTKEY: String = "O_CUSTKEY"
   val O_ORDERSTATUS: String = "O_ORDERSTATUS"

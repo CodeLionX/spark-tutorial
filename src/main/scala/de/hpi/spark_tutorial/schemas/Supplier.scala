@@ -1,6 +1,8 @@
 package de.hpi.spark_tutorial.schemas
 
 object Supplier {
+  val name: String = "tpch_supplier"
+
   val S_SUPPKEY: String = "S_SUPPKEY"
   val S_NAME: String = "S_NAME"
   val S_ADDRESS: String = "S_ADDRESS"

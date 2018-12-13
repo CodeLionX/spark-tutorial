@@ -1,6 +1,8 @@
 package de.hpi.spark_tutorial.schemas
 
 object Customer {
+  val name: String = "tpch_customer"
+
   val C_CUSTKEY: String = "C_CUSTKEY"
   val C_NAME: String = "C_NAME"
   val C_ADDRESS: String = "C_ADDRESS"

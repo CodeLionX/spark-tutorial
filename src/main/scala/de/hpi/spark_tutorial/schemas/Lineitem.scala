@@ -1,6 +1,8 @@
 package de.hpi.spark_tutorial.schemas
 
 object Lineitem {
+  val name: String = "tpch_lineitem"
+
   val L_ORDERKEY: String = "L_ORDERKEY"
   val L_PARTKEY: String = "L_PARTKEY"
   val L_SUPPKEY: String = "L_SUPPKEY"
