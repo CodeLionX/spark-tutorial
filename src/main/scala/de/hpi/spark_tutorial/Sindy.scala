@@ -1,20 +1,20 @@
 package de.hpi.spark_tutorial
 
 import de.hpi.spark_tutorial.schemas._
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 
 object Sindy extends App {
 
   val dataDir = "data/tpch"
   val datasetNames = Seq(
-//    Customer.name,
-//    Lineitem.name,
+    Customer.name,
+    Lineitem.name,
     Nation.name,
-//    Orders.name,
-//    Part.name,
-    Region.name//,
-//    Supplier.name
+    Orders.name,
+    Part.name,
+    Region.name,
+    Supplier.name
   )
   val inputs = datasetNames.map( name => s"$dataDir/$name.csv" )
 
@@ -34,29 +34,53 @@ object Sindy extends App {
   def discoverINDs(inputs: Seq[String], spark: SparkSession): Unit = {
 
     // read files
-    val dataframes: Seq[DataFrame] = inputs.map(name => {
+    val datasets: Seq[DataFrame] = inputs.map(name => {
       spark.read
-        .option("inferSchema", "true")
+//        .option("inferSchema", "true")
         .option("header", "true")
+        .option("quote", "\"")
         .option("delimiter", ";")
         .csv(name)
     })
 
-    implicit val mapEncoder: org.apache.spark.sql.Encoder[Map[Any, String]] =
-      org.apache.spark.sql.Encoders.kryo[Map[Any, String]]
-    implicit val mapEncoder2: org.apache.spark.sql.Encoder[Map[String, Any]] =
-      org.apache.spark.sql.Encoders.kryo[Map[String, Any]]
-    implicit val mapEncoder3: org.apache.spark.sql.Encoder[Any] =
-      org.apache.spark.sql.Encoders.kryo[Any]
-
-    dataframes.foreach(
-      _.flatMap( row => {
-        row.schema.fieldNames.map(name => {
-          row.get(row.schema.fieldNames.indexOf(name)) -> name
+    // cells per file
+    val columnValueTuplesPerFile: Seq[Dataset[(String, String)]] = datasets.map(df => {
+      val cols = df.columns
+      // explicitly convert each value to string
+      df.map(_.toSeq.map(String.valueOf))
+        .flatMap(row => {
+          row.zip(cols)
         })
+    })
+
+    val columnValueTuples: Dataset[(String, String)] = columnValueTuplesPerFile.reduce{ (ds1, ds2) => ds1.union(ds2) }
+    columnValueTuples.show()
+
+    // attribute sets per file
+    val attributeSets = columnValueTuples
+      .map(tuple => tuple._1 -> Set(tuple._2))
+        .groupByKey( _._1 )
+        .mapValues(_._2)
+        .reduceGroups( _ ++ _ )
+        .map(_._2)
+        .distinct()
+
+    val inclusionLists = attributeSets.flatMap( attributeSet => {
+        attributeSet.map( value => value -> (attributeSet - value) )
       })
-        .show(5)
-    )
-    // TODO
+    inclusionLists.show()
+    val x = inclusionLists.collect().toMap
+    println(x.get("N_NATIONKEY"))
+
+    val inds = inclusionLists
+      .groupByKey(_._1)
+      .mapValues(_._2)
+      .reduceGroups( (a, b) => a.intersect(b) )
+      .filter(_._2.nonEmpty)
+
+    val materializedInds = inds.collect()
+    materializedInds.foreach{ case (key, dependends) =>
+      println(s"$key < ${dependends.mkString(", ")}")
+    }
   }
 }
