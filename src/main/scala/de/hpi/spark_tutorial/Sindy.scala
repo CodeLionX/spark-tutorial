@@ -2,6 +2,7 @@ package de.hpi.spark_tutorial
 
 import java.io.File
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.backuity.clist
 import org.backuity.clist.opt
@@ -30,6 +31,9 @@ object Sindy extends clist.CliMain[Unit](
 
     // configure
     spark.conf.set("spark.sql.shuffle.partitions", "16")
+    // Turn off logging
+    Logger.getLogger("org").setLevel(Level.OFF)
+    Logger.getLogger("akka").setLevel(Level.OFF)
     import spark.implicits._
 
     // read files
