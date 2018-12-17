@@ -1,7 +1,5 @@
 package de.hpi.spark_tutorial
 
-import java.io.File
-
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.backuity.clist
@@ -18,6 +16,10 @@ object Sindy extends clist.CliMain[Unit](
 
   override def run: Unit = {
 
+    // Turn off logging
+    Logger.getLogger("org").setLevel(Level.OFF)
+    Logger.getLogger("akka").setLevel(Level.OFF)
+
     val dataDir = this.path
     val datasetNames = Seq("region", "nation", "supplier", "customer", "part", "lineitem", "orders")
     val inputs = datasetNames.map(name => s"$dataDir/tpch_$name.csv")
@@ -31,9 +33,6 @@ object Sindy extends clist.CliMain[Unit](
 
     // configure
     spark.conf.set("spark.sql.shuffle.partitions", "16")
-    // Turn off logging
-    Logger.getLogger("org").setLevel(Level.OFF)
-    Logger.getLogger("akka").setLevel(Level.OFF)
     import spark.implicits._
 
     // read files
